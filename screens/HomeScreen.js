@@ -142,7 +142,7 @@ export default function HomeScreen() {
       return;
     }
 
-    const apiKey = "YOUR_API_KEY"; // Replace with actual API key
+    const apiKey = "2Vt2dYvRRcRjKdjs91lZlLqbqSQNXuRu8MpjUzC2SyagbnBbHmfRJQQJ99BBACGhslBXJ3w3AAAbACOGbKnk"; // Replace with actual API key
     const endpoint = "https://api.cognitive.microsofttranslator.com/translate";
     const location = "centralindia"; // Example: "eastus"
 
@@ -223,7 +223,7 @@ export default function HomeScreen() {
 
       {/* SVG Rectangle for Daily Sentence */}
       <Svg width={width} height="100">
-        <Rect x="0" y="0" width={width} height="80" stroke="blue" strokeWidth="3" fill="white" />
+        <Rect x="0" y="0" width={width} height="80" stroke="blue" strokeWidth="3" fill="white" rx="10" />
         <Text style={styles.dailySentence}>{dailySentence}</Text>
       </Svg>
 

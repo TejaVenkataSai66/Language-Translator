@@ -57,3 +57,23 @@ export const deleteTranslation = async (id) => {
         return [];
     }
 };
+export const saveDailySentence = async (state, sentence) => {
+    try {
+        const data = { state, sentence, timestamp: Date.now() };
+        await AsyncStorage.setItem('dailySentence', JSON.stringify(data));
+        console.log("Daily sentence saved successfully!");
+    } catch (error) {
+        console.error("Error saving daily sentence:", error);
+    }
+};
+
+// Get daily sentence from storage
+export const getDailySentence = async () => {
+    try {
+        const data = await AsyncStorage.getItem('dailySentence');
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error("Error fetching daily sentence:", error);
+        return null;
+    }
+};
