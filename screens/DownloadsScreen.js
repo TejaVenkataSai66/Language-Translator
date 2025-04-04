@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Notifications from 'expo-notifications';
 import { getTranslations, deleteTranslation } from '../utils/storage'; // Import storage functions
 
 export default function DownloadsScreen() {
@@ -16,20 +18,58 @@ export default function DownloadsScreen() {
     // Delete translation and update UI
     const handleDelete = async (id) => {
         const updatedTranslations = await deleteTranslation(id);
-        setTranslations(updatedTranslations); // Update list after deletion
-        setTotalWords(updatedTranslations.length); // Update total words count
+        setTranslations(updatedTranslations);
+        setTotalWords(updatedTranslations.length);
+    };
+
+    // Write translations to SD card
+    const saveToSDCard = async () => {
+        if (translations.length === 0) {
+            Alert.alert('No Data', 'There are no translations to save.');
+            return;
+        }
+    
+        // Request permission to write to external storage
+        const { status } = await FileSystem.requestPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'You need to grant storage permission.');
+            return;
+        }
+    
+        // Define SD card path (change according to device)
+        const fileUri = FileSystem.externalStorageDirectory + 'Download/translations.txt';
+    
+        const fileContent = translations
+            .map(item => `${item.fromLang} → ${item.toLang}\n${item.original} → ${item.translated}`)
+            .join('\n\n');
+    
+        try {
+            await FileSystem.writeAsStringAsync(fileUri, fileContent);
+            showNotification('Saved!', 'Translations saved to SD card.');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to save file: ' + error.message);
+        }
+    };
+    
+
+    // Show notification
+    const showNotification = async (title, body) => {
+        await Notifications.scheduleNotificationAsync({
+            content: { title, body, sound: 'default' },
+            trigger: null,
+        });
     };
 
     useEffect(() => {
         loadTranslations();
+        Notifications.requestPermissionsAsync(); // Request notification permissions
     }, []);
 
     return (
         <View style={styles.container}>
-            {/* Display total words count */}
             <Text style={styles.totalWords}>Total Words: {totalWords}</Text>
             <Text style={styles.title}>Saved Translations</Text>
-            
+
             <FlatList
                 data={translations}
                 keyExtractor={(item) => item.id.toString()}
@@ -38,14 +78,18 @@ export default function DownloadsScreen() {
                         <Text style={styles.lang}>{item.fromLang} → {item.toLang}</Text>
                         <Text style={styles.original}>{item.original}</Text>
                         <Text style={styles.translated}>{item.translated}</Text>
-                        
-                        {/* Delete Button */}
+
                         <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
                             <Text style={styles.buttonText}>Delete</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             />
+
+            {/* Button to Save to SD Card */}
+            <TouchableOpacity style={styles.saveButton} onPress={saveToSDCard}>
+                <Text style={styles.buttonText}>Save to SD Card</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -59,5 +103,6 @@ const styles = StyleSheet.create({
     original: { fontSize: 14, color: 'black' },
     translated: { fontSize: 14, color: 'green' },
     deleteButton: { backgroundColor: 'red', padding: 8, marginTop: 10, borderRadius: 5, alignItems: 'center' },
+    saveButton: { backgroundColor: 'blue', padding: 12, marginTop: 20, borderRadius: 5, alignItems: 'center' },
     buttonText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });
