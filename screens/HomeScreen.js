@@ -7,10 +7,11 @@ import { useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location'; // Import expo-location
 import Svg, { Rect } from 'react-native-svg';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 import { saveTranslation } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Speech from 'expo-speech';
 
 // Get device screen width
 const { width } = Dimensions.get('window');
@@ -56,6 +57,13 @@ export default function HomeScreen() {
       }),
     ]).start(() => setIsAnimationComplete(true)); // Show UI after animation
   }, []);
+  const speakText = (text) => {
+    if (text) {
+      Speech.speak(text, { language: toLang });  // Pronounce in target language
+    } else {
+      alert("Nothing to pronounce!");
+    }
+  };
 
   // Function to request push notification permissions
   const registerForPushNotificationsAsync = useCallback(async () => {
@@ -225,6 +233,9 @@ export default function HomeScreen() {
       <Svg width={width} height="100">
         <Rect x="0" y="0" width={width} height="80" stroke="blue" strokeWidth="3" fill="white" rx="10" />
         <Text style={styles.dailySentence}>{dailySentence}</Text>
+        <TouchableOpacity onPress={() => speakText(dailySentence)} style={styles.micButton}>
+        <FontAwesome name="microphone" size={24} color="black" />
+      </TouchableOpacity>
       </Svg>
 
       <TextInput 
@@ -273,6 +284,9 @@ export default function HomeScreen() {
 
       <View style={styles.outputBox}>
         <Text style={styles.outputText}>{translatedText}</Text>
+        <TouchableOpacity onPress={() => speakText(translatedText)} style={styles.micButton}>
+        <FontAwesome name="microphone" size={24} color="black" />
+      </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.translateButton} onPress={handleTranslate}>
@@ -371,6 +385,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     width: '90%',
+  },
+  micButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 20,
+    elevation: 3,  // Shadow effect
   }
 });
 

@@ -1,45 +1,106 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig'; // Ensure correct path to your Firebase config
+import { useNavigation } from '@react-navigation/native';
 
-export default function AuthScreen() {
+export default function LoginScreen() {
     const [isSignup, setIsSignup] = useState(false);
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigation = useNavigation();
+
+    const handleSignup = async () => {
+        if (!username || !email || !password) {
+            Alert.alert('Error', 'Please fill all fields');
+            return;
+        }
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Store user info in Firestore
+            await setDoc(doc(db, 'users', user.uid), {
+                username,
+                email,
+                uid: user.uid,
+            });
+
+            Alert.alert('Success', 'User registered successfully!');
+            navigation.navigate('Login');
+        } catch (error) {
+            Alert.alert('Signup Error', error.message);
+        }
+    };
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill all fields');
+            return;
+        }
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            Alert.alert('Success', 'Login successful!');
+            navigation.navigate('Home');
+
+        } catch (error) {
+            Alert.alert('Login Error', error.message);
+        }
+    };
 
     return (
         <View style={styles.main}>
-            {/* Checkbox to switch between Login & Sign-Up */}
             <TouchableOpacity style={styles.toggleContainer} onPress={() => setIsSignup(!isSignup)}>
                 <Text style={styles.toggleText}>{isSignup ? 'Switch to Login' : 'Switch to Sign Up'}</Text>
             </TouchableOpacity>
 
-            {/* Sign-Up Form */}
-            {isSignup && (
+            {isSignup ? (
                 <View style={styles.formContainer}>
                     <Text style={styles.label}>Sign Up</Text>
-                    <TextInput style={styles.input} placeholder="User name" value={username} onChangeText={setUsername} />
-                    <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" value={email} onChangeText={setEmail} />
-                    <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-                    <TextInput style={styles.input} placeholder="OTP" secureTextEntry value={password} onChangeText={setPassword} />
-                    <TouchableOpacity style={styles.button}>
-                        <Text style={styles.buttonText}>Send OTP</Text>
-                    </TouchableOpacity>
-                    
-
-                    <TouchableOpacity style={styles.button}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Username"
+                        value={username}
+                        onChangeText={setUsername}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        keyboardType="email-address"
+                        value={email}
+                        onChangeText={setEmail}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                    <TouchableOpacity style={styles.button} onPress={handleSignup}>
                         <Text style={styles.buttonText}>Sign Up</Text>
                     </TouchableOpacity>
                 </View>
-            )}
-
-            {/* Login Form */}
-            {!isSignup && (
+            ) : (
                 <View style={styles.formContainer}>
                     <Text style={styles.label}>Login</Text>
-                    <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" value={email} onChangeText={setEmail} />
-                    <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-                    <TouchableOpacity style={styles.button}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        keyboardType="email-address"
+                        value={email}
+                        onChangeText={setEmail}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
                         <Text style={styles.buttonText}>Login</Text>
                     </TouchableOpacity>
                 </View>
@@ -92,7 +153,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         marginBottom: 15,
-       },
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
